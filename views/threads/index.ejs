@@ -2,11 +2,15 @@
 <h1>スレッド一覧</h1>
 <a href="/threads/new">スレッド新規作成</a>
 
-<ul>
-    <% for (let thread of threads) { %>
-        <li>
-            <strong><%= thread.title %></strong>
-            <p><%= thread.content %></p>
-        </li>
-    <% } %>
-</ul>
+<% for (let thread of threads) { %>
+    <div class="card mb-3">
+        <h5 class="card-header">Featured</h5>
+        <div class="card-body">
+            <h5 class="card-title"><%= thread.title %></h5>
+            <p class="card-text"><%= thread.content %></p>
+            <a href="/threads/<%= thread._id %>" class="btn btn-primary">スレッドを見る</a>
+        </div>
+    </div>
+<% } %>
+
+

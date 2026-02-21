@@ -40,7 +40,13 @@ app.get('/threads', async (req, res) => {
 
 app.get('/threads/new', (req, res) => {
     res.render('threads/new')
-})
+});
+
+app.get('/threads/:id', async (req, res) => {
+    const threadId = req.params.id;
+    const thread = await Thread.findById(req.params.id);
+    res.render('threads/show', { thread });
+});
 
 app.use((req, res) => {
     res.send('そんなパスはありません');
