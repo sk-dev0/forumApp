@@ -4,6 +4,8 @@ const path = require('path');
 const engine = require('ejs-mate');
 const mongoose = require('mongoose');
 
+const Thread = require('./models/thread');
+
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -19,18 +21,20 @@ mongoose.connect('mongodb://127.0.0.1:27017/forumApp')
         console.log(err);
     });
 
-let threads = []; //テスト用配列
 
 app.get('/', (req, res) => {
     res.render('home');
 })
 
-app.post('/threads', (req, res) => {
-    threads.push(req.body);
+app.post('/threads', async (req, res) => {
+    console.log(req.body);
+    const thread = new Thread(req.body);
+    await thread.save();
     res.redirect('/threads');
 })
 
-app.get('/threads', (req, res) => {
+app.get('/threads', async (req, res) => {
+    const threads = await Thread.find({});
     res.render('threads/index', { threads });
 });
 
