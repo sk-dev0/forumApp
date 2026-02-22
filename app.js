@@ -5,6 +5,7 @@ const engine = require('ejs-mate');
 const mongoose = require('mongoose');
 
 const Thread = require('./models/thread');
+const Post = require('./models/post');
 
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
@@ -27,7 +28,6 @@ app.get('/', (req, res) => {
 })
 
 app.post('/threads', async (req, res) => {
-    console.log(req.body);
     const thread = new Thread(req.body);
     await thread.save();
     res.redirect('/threads');
@@ -45,7 +45,18 @@ app.get('/threads/new', (req, res) => {
 app.get('/threads/:id', async (req, res) => {
     const threadId = req.params.id;
     const thread = await Thread.findById(req.params.id);
-    res.render('threads/show', { thread });
+    const posts = await Post.find({ thread: threadId }).sort({ createdAt: 1 });
+    res.render('threads/show', { thread, posts });
+});
+
+app.post('/threads/:id/posts', async (req, res) => {
+    const { id } = req.params;
+    const { content } = req.body;
+    await Post.create({
+        content,
+        thread: id
+    });
+    res.redirect(`/threads/${id}`);
 });
 
 app.use((req, res) => {
