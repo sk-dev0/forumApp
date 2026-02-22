@@ -7,6 +7,9 @@ const mongoose = require('mongoose');
 const Thread = require('./models/thread');
 const Post = require('./models/post');
 
+const bcrypt = require('bcrypt');
+const User = require('./models/user');
+
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -58,6 +61,21 @@ app.post('/threads/:id/posts', async (req, res) => {
     });
     res.redirect(`/threads/${id}`);
 });
+
+app.get('/register', (req, res) => {
+    res.render('users/register');
+})
+
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = new User({
+        username,
+        password: hashedPassword
+    });
+    await user.save();
+    res.redirect('/threads');
+})
 
 app.use((req, res) => {
     res.send('そんなパスはありません');
