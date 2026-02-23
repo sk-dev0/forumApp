@@ -3,6 +3,7 @@ const app = express();
 const path = require('path');
 const engine = require('ejs-mate');
 const mongoose = require('mongoose');
+const session = require('express-session');
 
 const Thread = require('./models/thread');
 const Post = require('./models/post');
@@ -15,6 +16,20 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+    secret: 'mysecret',
+    resave: false,
+    saveUninitialized:false,
+    cookie: {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24
+    }
+}));
+
+app.use((req, res, next) => {
+    res.locals.currentUser = req.session.userId;
+    next();
+});
 
 mongoose.connect('mongodb://127.0.0.1:27017/forumApp')
     .then(() => {
@@ -76,6 +91,25 @@ app.post('/register', async (req, res) => {
     await user.save();
     res.redirect('/threads');
 })
+
+app.get('/login', (req, res) => {
+    res.render('users/login');
+})
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) {
+        return res.send('ユーザーが存在しません');
+    } 
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+        return res.send('パスワードが違います');
+    }
+
+    req.session.userId = user._id;
+    res.redirect('/threads');
+});
 
 app.use((req, res) => {
     res.send('そんなパスはありません');

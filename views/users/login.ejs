@@ -1,0 +1,27 @@
+<% layout('layouts/boilerplate') %>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">ログイン</h2>
+
+                        <form action="/login" method="POST">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="username" name="username" placeholder="ユーザー名">
+                                <label for="username">ユーザー名</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="password" class="form-control" id="password" name="password" placeholder="パスワード">
+                                <label for="password">パスワード</label>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">ログイン</button>
+                            </div>
+                        </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
