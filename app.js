@@ -4,12 +4,16 @@ const path = require('path');
 const engine = require('ejs-mate');
 const mongoose = require('mongoose');
 const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const flash = require('connect-flash');
 
 const Thread = require('./models/thread');
 const Post = require('./models/post');
 
 const bcrypt = require('bcrypt');
 const User = require('./models/user');
+const { runInNewContext } = require('vm');
 
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
@@ -26,8 +30,17 @@ app.use(session({
     }
 }));
 
-app.use((req, res, next) => {
-    res.locals.currentUser = req.session.userId;
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+app.use(flash());
+app.use((req, res ,next) => {
+    res.locals.currentUser = req.user;
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
     next();
 });
 
@@ -81,35 +94,48 @@ app.get('/register', (req, res) => {
     res.render('users/register');
 })
 
-app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const user = new User({
-        username,
-        password: hashedPassword
-    });
-    await user.save();
-    res.redirect('/threads');
-})
+app.post('/register', async (req, res, next) => {
+    try{
+        const { username, password } = req.body;
+        const user = new User({ username });
+
+        const registeredUser = await User.register(user, password);
+
+        req.login(registeredUser, err => {
+            if (err) {
+                return next(err);
+            }
+            res.redirect('/threads');
+        });
+    } catch (e) {
+        res.redirect('/register');
+    }
+});
 
 app.get('/login', (req, res) => {
     res.render('users/login');
 })
 
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user) {
-        return res.send('ユーザーが存在しません');
-    } 
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-        return res.send('パスワードが違います');
+app.post('/login',
+    passport.authenticate('local', {
+        failureRedirect: '/login',
+    }),
+    (req, res) => {
+        req.flash('success', 'おかえりなさい！！');
+        res.redirect('/threads');
     }
+);
 
-    req.session.userId = user._id;
-    res.redirect('/threads');
-});
+
+app.get('/logout', (req, res, next) => {
+    req.logout(err => {
+        if (err) {
+            return next(err);
+        }
+        req.flash('success', 'ログアウトしました');
+        res.redirect('/threads');
+    })
+})
 
 app.use((req, res) => {
     res.send('そんなパスはありません');

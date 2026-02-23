@@ -11,8 +11,13 @@
         <a class="nav-link" href="/threads/new">スレッド新規作成</a>
       </div>
       <div class="navbar-nav ms-auto">
-        <a class="nav-link" href="/register">ユーザー登録</a>
-        <a class="nav-link" href="/login">ログイン</a>
+        <% if (currentUser) { %>
+          <span class="navbar-text me-2">ようこそ、<%= currentUser.username %>さん！</span>
+          <a class="nav-link" href="/logout">ログアウト</a>
+        <% } else { %>
+          <a class="nav-link" href="/register">ユーザー登録</a>
+          <a class="nav-link" href="/login">ログイン</a>
+        <% } %>
       </div>
     </div>
   </div>
