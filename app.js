@@ -175,6 +175,7 @@ app.get('/login', (req, res) => {
 app.post('/login',
     passport.authenticate('local', {
         failureRedirect: '/login',
+        failureFlash: 'ユーザー名またはパスワードが違います',
     }),
     (req, res) => {
         req.flash('success', 'おかえりなさい！！');
@@ -186,6 +187,7 @@ app.post('/login',
 app.get('/logout', (req, res, next) => {
     req.logout(err => {
         if (err) {
+            req.flash('error', 'ログアウトに失敗しました');
             return next(err);
         }
         req.flash('success', 'ログアウトしました');
