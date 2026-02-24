@@ -9,6 +9,11 @@
             <h5 class="card-title"><%= thread.title %></h5>
             <p class="card-text"><%= thread.content %></p>
             <a href="/threads/<%= thread._id %>" class="btn btn-primary">スレッドを見る</a>
+            <% if (currentUser && thread.author.equals(currentUser._id)) { %>
+                <form action="/threads/<%= thread._id %>?_method=DELETE" method="POST" class="d-inline">
+                    <button type="submit" class="delete-btn btn btn-danger ms-3" data-id="<%= thread._id %>">削除する</button>
+                </form>
+            <% } %>
         </div>
     </div>
 <% } %>

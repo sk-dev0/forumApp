@@ -11,21 +11,36 @@
 <% for (let post of posts) { %>
     <div class="mb-3 p-3 bg-body-tertiary rounded-3">
         <%= post.content %>
+        <% if (currentUser && post.author.equals(currentUser._id)) { %>
+            <button type="button" class="edit-btn btn btn-success ms-3" data-id="<%= post._id %>" data-content="<%= post.content %>">編集する</button>
+        <% } %>
+        <% if (currentUser && post.author.equals(currentUser._id)) { %>
+            <form action="/posts/<%= post._id %>?_method=DELETE" method="POST" class="d-inline">
+                <button type="submit" class="delete-btn btn btn-danger ms-3" data-id="<%= post._id %>">削除する</button>
+            </form>
+        <% } %>
     </div>
 <% } %>
 
 <% if (currentUser) { %>
-    <form action="/threads/<%= thread._id %>/posts" method="POST">
+    <div id="editNotice" class="alert alert-warning d-none">
+        現在この投稿を編集中です
+        <button type="button" class="btn btn-sm btn-outline-dark ms-3" id="cancelEdit">
+            キャンセル
+        </button>
+    </div>
+    <form id="postForm" action="/threads/<%= thread._id %>/posts" method="POST">
         <div class="mb-3">
             <label for="replyInput" class="form-label">返信を入力</label>
             <textarea name="content" class="form-control" id="replyInput" rows="3" placeholder="返信を入力..." required></textarea>
+            <input type="hidden" name="postId" id="postId">
         </div>
 
         <div class="d-flex justify-content-between mt-3">
             <a href="/threads" class="btn btn-danger">
                 スレッド一覧に戻る
             </a>
-            <button class="btn btn-primary px-4">
+            <button id="submitBtn" class="btn btn-primary px-4">
                 投稿する
             </button>
         </div>
@@ -36,3 +51,57 @@
     </div>
 <% } %>
 
+<script>
+    const editButtons = document.querySelectorAll('.edit-btn');
+    const textarea = document.getElementById('replyInput');
+    const form = document.getElementById('postForm');
+    const postIdInput = document.getElementById('postId');
+    const submitBtn = document.getElementById('submitBtn');
+    const editNotice = document.getElementById('editNotice');
+    const cancelEdit = document.getElementById('cancelEdit');
+
+    let originalAction = form.action;
+    let editingPostElement = null;
+
+    editButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const postId = button.dataset.id;
+            const content = button.dataset.content;
+
+            textarea.value = content;
+            postIdInput.value = postId;
+            form.action = `/posts/${postId}?_method=PUT`;
+            form.classList.add("border", "border-warning", "bg-warning-subtle");
+            editNotice.classList.remove("d-none");
+            submitBtn.textContent = "更新する";
+            submitBtn.classList.remove("btn-primary");
+            submitBtn.classList.add("btn-warning");
+            if (editingPostElement) {
+                editingPostElement.classList.remove("border", "border-danger");
+            }
+            editingPostElement = button.closest('.bg-body-tertiary');
+            editingPostElement.classList.add("border", "border-danger");
+
+            textarea.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        cancelEdit.addEventListener('click', () => {
+            textarea.value = "";
+            postIdInput.value = "";
+            form.action = originalAction;
+
+            form.classList.remove("border", "border-warning", "bg-warning-subtle");
+
+            editNotice.classList.add("d-none");
+
+            submitBtn.textContent = "投稿する";
+            submitBtn.classList.remove("btn-warning");
+            submitBtn.classList.add("btn-primary");
+
+            if (editingPostElement) {
+                editingPostElement.classList.remove("border", "border-danger");
+                editingPostElement = null;
+            }
+        });
+    });
+</script>
