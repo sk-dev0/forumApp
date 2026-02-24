@@ -7,17 +7,21 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const flash = require('connect-flash');
+const isLoggedIn = require('./middleware').isLoggedIn;
 
 const Thread = require('./models/thread');
 const Post = require('./models/post');
 
 const bcrypt = require('bcrypt');
 const User = require('./models/user');
-const { runInNewContext } = require('vm');
+const methodOverride = require('method-override');
+const thread = require('./models/thread');
 
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+app.use(methodOverride('_method'));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -58,8 +62,9 @@ app.get('/', (req, res) => {
     res.render('home');
 })
 
-app.post('/threads', async (req, res) => {
+app.post('/threads', isLoggedIn, async (req, res) => {
     const thread = new Thread(req.body);
+    thread.author = req.user._id;
     await thread.save();
     res.redirect('/threads');
 })
@@ -80,19 +85,70 @@ app.get('/threads/:id', async (req, res) => {
     res.render('threads/show', { thread, posts });
 });
 
-app.post('/threads/:id/posts', async (req, res) => {
+app.delete('/threads/:id', isLoggedIn, async (req, res) => {
+    const { id } = req.params;
+    const thread = await Thread.findById(id);
+
+    if (!thread) {
+        req.flash('error', 'スレッドが見つかりません');
+        return res.redirect('/threads');
+    }
+
+    if (!thread.author.equals(req.user._id)) {
+        req.flash('error', '権限がありません');
+        return res.redirect('/threads');
+    }
+
+    await Post.deleteMany({ thread: id });
+    await Thread.findByIdAndDelete(id);
+
+    req.flash('success', 'スレッドを削除しました');
+    res.redirect('/threads');
+});
+
+app.post('/threads/:id/posts', isLoggedIn, async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
     await Post.create({
         content,
-        thread: id
+        thread: id,
+        author: req.user._id
     });
     res.redirect(`/threads/${id}`);
 });
 
+app.put('/posts/:id', isLoggedIn, async (req, res) => {
+    const { id } = req.params;
+    const post = await Post.findById(id);
+    if (!post.author.equals(req.user._id)){
+        req.flash('error', '権限がありません');
+        return res.redirect(`/threads/${post.thread}`);
+    }
+
+    post.content = req.body.content;
+    post.edited = true;
+    post.editedAt = Date.now();
+    await post.save();
+    req.flash('success', '投稿を更新しました');
+    res.redirect(`/threads/${post.thread}`);
+});
+
+app.delete('/posts/:id', isLoggedIn, async (req, res) => {
+    const { id } = req.params;
+    const post = await Post.findById(id);
+    if (!post.author.equals(req.user._id)){
+        req.flash('error', '権限がありません');
+        return res.redirect(`/threads/${post.thread}`);
+    }
+
+    await Post.findByIdAndDelete(id);
+    req.flash('success', '投稿を削除しました');
+    res.redirect(`/threads/${post.thread}`);
+});
+
 app.get('/register', (req, res) => {
     res.render('users/register');
-})
+});
 
 app.post('/register', async (req, res, next) => {
     try{
