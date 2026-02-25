@@ -22,6 +22,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(methodOverride('_method'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -74,7 +75,7 @@ app.get('/threads', async (req, res) => {
     res.render('threads/index', { threads });
 });
 
-app.get('/threads/new', (req, res) => {
+app.get('/threads/new', isLoggedIn,  (req, res) => {
     res.render('threads/new')
 });
 
@@ -105,6 +106,44 @@ app.delete('/threads/:id', isLoggedIn, async (req, res) => {
     req.flash('success', 'スレッドを削除しました');
     res.redirect('/threads');
 });
+
+app.get('/threads/:id/edit', isLoggedIn, async(req, res) => {
+    const thread = await Thread.findById(req.params.id);
+
+    if (!thread) {
+        req.flash('error', 'スレッドが見つかりません');
+        return res.redirect('/threads');
+    }
+
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    const isWithinTime = (Date.now() - thread.createdAt.getTime()) < FIVE_MINUTES;
+
+    if (!req.user || !thread.author.equals(req.user._id) || !isWithinTime) { 
+        req.flash('error', 'スレッドは作成から5分以内のみ編集可能です');
+        return res.redirect('/threads');
+    }
+
+    res.render('threads/edit', { thread });
+});
+
+app.put('/threads/:id', isLoggedIn, async (req, res) => {
+    const thread = await Thread.findById(req.params.id);
+
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    const isWithinTime = (Date.now() - thread.createdAt.getTime()) < FIVE_MINUTES;
+
+    if (!req.user || !thread.author.equals(req.user._id) || !isWithinTime) { 
+        req.flash('error', 'スレッドは作成から5分以内のみ編集可能です');
+        return res.redirect('/threads');
+    }
+
+    thread.title = req.body.title;
+    thread.content = req.body.content;
+    await thread.save();
+
+    req.flash('success', 'スレッドを更新しました');
+    res.redirect('/threads');
+})
 
 app.post('/threads/:id/posts', isLoggedIn, async (req, res) => {
     const { id } = req.params;

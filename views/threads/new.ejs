@@ -1,18 +1,34 @@
 <% layout('layouts/boilerplate') %>
 <h1>スレッド新規作成</h1>
 
-<form action="/threads" method="POST">
+<form action="/threads" method="POST" class="needs-validation" novalidate>
     <div class="mb-3">
         <label for="threadTitle" class="form-label">スレッドのタイトル</label>
-        <input type="text" class="form-control" id="threadTitle" name="title" placeholder="スレッドのタイトルを入力">
+        <input type="text" class="form-control" id="threadTitle" name="title" placeholder="スレッドのタイトルを入力" required>
+        <div class="valid-feedback">
+            OK!
+        </div>
+        <div class="invalid-feedback">
+            タイトルを入力してください
+        </div>
     </div>
     <div class="mb-3">
         <label for="threadContent" class="form-label">スレッドの内容</label>
-        <textarea class="form-control" id="threadContent" name="content" rows="3"></textarea>
+        <textarea class="form-control" id="threadContent" name="content" rows="3" required></textarea>
+        <div class="valid-feedback">
+            OK!
+        </div>
+        <div class="invalid-feedback">
+            内容を入力してください
+        </div>
     </div>
-    <div>
-        <button type="submit" class="btn btn-primary mb-3">作成</button>
+    
+    <div class="d-flex justify-content-between mt-3">
+        <a href="/threads" class="btn btn-danger">
+            スレッド一覧に戻る
+        </a>
+        <button id="submitBtn" class="btn btn-primary px-4">
+            作成
+        </button>
     </div>
-
-    <a href="/threads">スレッド一覧に戻る</a>
 </form>

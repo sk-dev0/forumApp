@@ -1,14 +1,34 @@
 <% layout('layouts/boilerplate') %>
-<h1>スレッド一覧</h1>
-<a href="/threads/new">スレッド新規作成</a>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>スレッド一覧</h1>
+    <% if (currentUser) { %>
+        <a href="/threads/new" class="btn btn-primary mb-3 btn-lg">スレッド新規作成</a>
+    <% } else { %>
+        <a href="/login" class="btn btn-primary mb-3 btn-lg">ログインしてスレッド新規作成</a>
+    <% } %>
+</div>
 
 <% for (let thread of threads) { %>
+
+    <% 
+        const FIVE_MINUTES = 5 * 60 * 1000;
+        const isWithinTime = (Date.now() - thread.createdAt.getTime()) < FIVE_MINUTES;
+    %>
+
     <div class="card mb-3">
         <h5 class="card-header">Featured</h5>
         <div class="card-body">
             <h5 class="card-title"><%= thread.title %></h5>
             <p class="card-text"><%= thread.content %></p>
             <a href="/threads/<%= thread._id %>" class="btn btn-primary">スレッドを見る</a>
+
+            <% if (currentUser && thread.author.equals(currentUser._id) && isWithinTime) { %>
+                <form action="/threads/<%= thread._id %>/edit" method="GET" class="d-inline">
+                    <button type="submit" class="delete-btn btn btn-success ms-3" data-id="<%= thread._id %>">編集する</button>
+                </form>
+            <% } %>
+
             <% if (currentUser && thread.author.equals(currentUser._id)) { %>
                 <form action="/threads/<%= thread._id %>?_method=DELETE" method="POST" class="d-inline">
                     <button type="submit" class="delete-btn btn btn-danger ms-3" data-id="<%= thread._id %>">削除する</button>

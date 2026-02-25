@@ -3,8 +3,18 @@
   <div class="card-body">
     <h3 class="fw-bold mb-3"><%= thread.title %></h3>
     <p class="text-body-secondary mb-0">
-      <%= thread.content %>
+        <%= thread.content %>
     </p>
+        <%
+            const FIVE_MINUTES = 5 * 60 * 1000;
+            const isWithinTime = (Date.now() - thread.createdAt.getTime()) < FIVE_MINUTES;
+        %>
+    
+        <% if (currentUser && thread.author.equals(currentUser._id) && isWithinTime) { %>
+                <form action="/threads/<%= thread._id %>/edit" method="GET" class="d-inline">
+                    <button type="submit" class="delete-btn btn btn-success mt-3" data-id="<%= thread._id %>">編集する</button>
+                </form>
+        <% } %>
   </div>
 </div>
 
@@ -29,11 +39,17 @@
             キャンセル
         </button>
     </div>
-    <form id="postForm" action="/threads/<%= thread._id %>/posts" method="POST">
+    <form id="postForm" action="/threads/<%= thread._id %>/posts" method="POST" class="needs-validation" novalidate>
         <div class="mb-3">
             <label for="replyInput" class="form-label">返信を入力</label>
             <textarea name="content" class="form-control" id="replyInput" rows="3" placeholder="返信を入力..." required></textarea>
-            <input type="hidden" name="postId" id="postId">
+            <input type="hidden" name="postId" id="postId" required>
+            <div class="valid-feedback">
+                OK!
+            </div>
+            <div class="invalid-feedback">
+                内容を入力してください
+            </div>
         </div>
 
         <div class="d-flex justify-content-between mt-3">
