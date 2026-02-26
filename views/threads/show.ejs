@@ -25,9 +25,7 @@
             <button type="button" class="edit-btn btn btn-success ms-3" data-id="<%= post._id %>" data-content="<%= post.content %>">編集する</button>
         <% } %>
         <% if (currentUser && post.author.equals(currentUser._id)) { %>
-            <form action="/posts/<%= post._id %>?_method=DELETE" method="POST" class="d-inline">
-                <button type="submit" class="delete-btn btn btn-danger ms-3" data-id="<%= post._id %>">削除する</button>
-            </form>
+            <button type="submit" class="delete-btn btn btn-danger ms-3 delete-trigger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="<%= post._id %>">削除する</button>
         <% } %>
     </div>
 <% } %>
@@ -65,6 +63,8 @@
         返信するには<a href="/login" class="alert-link">ログイン</a>してください。
     </div>
 <% } %>
+
+<%- include('../partials/deleteModal') %>
 
 <script>
     const editButtons = document.querySelectorAll('.edit-btn');
@@ -119,4 +119,16 @@
             }
         });
     });
+
+    const deleteButtons = document.querySelectorAll('.delete-trigger');
+    const deleteForm = document.getElementById('deleteForm');
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const postId = button.dataset.id;
+            deleteForm.action = `/posts/${postId}?_method=DELETE`;
+        });
+    });
 </script>
+
+

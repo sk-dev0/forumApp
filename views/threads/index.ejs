@@ -30,12 +30,31 @@
             <% } %>
 
             <% if (currentUser && thread.author.equals(currentUser._id)) { %>
-                <form action="/threads/<%= thread._id %>?_method=DELETE" method="POST" class="d-inline">
-                    <button type="submit" class="delete-btn btn btn-danger ms-3" data-id="<%= thread._id %>">削除する</button>
-                </form>
+                <button type="button" class="delete-btn btn btn-danger ms-3 delete-trigger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="<%= thread._id %>" data-type="thread">削除する</button>
             <% } %>
         </div>
     </div>
 <% } %>
 
+<%- include('../partials/deleteModal') %>
 
+<script>
+    const deleteButtons = document.querySelectorAll('.delete-trigger');
+    const deleteForm = document.getElementById('deleteForm');
+
+    if (deleteForm) {
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const id = button.dataset.id;
+                const type = button.dataset.type;
+                
+                if (type === "thread") {
+                deleteForm.action = `/threads/${id}?_method=DELETE`;
+                } else {
+                    deleteForm.action = `/posts/${id}?_method=DELETE`;
+                }
+            });
+        });
+    }
+    
+</script>
