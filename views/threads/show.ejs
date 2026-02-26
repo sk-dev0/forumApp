@@ -43,7 +43,6 @@
         <div class="mb-3">
             <label for="replyInput" class="form-label">返信を入力</label>
             <textarea name="content" class="form-control" id="replyInput" rows="3" placeholder="返信を入力..." required></textarea>
-            <input type="hidden" name="postId" id="postId" required>
             <div class="valid-feedback">
                 OK!
             </div>
@@ -71,7 +70,7 @@
     const editButtons = document.querySelectorAll('.edit-btn');
     const textarea = document.getElementById('replyInput');
     const form = document.getElementById('postForm');
-    const postIdInput = document.getElementById('postId');
+    
     const submitBtn = document.getElementById('submitBtn');
     const editNotice = document.getElementById('editNotice');
     const cancelEdit = document.getElementById('cancelEdit');
@@ -85,7 +84,7 @@
             const content = button.dataset.content;
 
             textarea.value = content;
-            postIdInput.value = postId;
+            
             form.action = `/posts/${postId}?_method=PUT`;
             form.classList.add("border", "border-warning", "bg-warning-subtle");
             editNotice.classList.remove("d-none");
@@ -103,7 +102,7 @@
 
         cancelEdit.addEventListener('click', () => {
             textarea.value = "";
-            postIdInput.value = "";
+            
             form.action = originalAction;
 
             form.classList.remove("border", "border-warning", "bg-warning-subtle");

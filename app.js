@@ -7,15 +7,16 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const flash = require('connect-flash');
-const isLoggedIn = require('./middleware').isLoggedIn;
+const { isLoggedIn, isThreadAuthor, isThreadExist, isPostAuthor, isPostExist, validateThread, validatePost} = require('./middleware');
+const ExpressError = require('./utils/ExpressError');
+const catchAsync = require('./utils/catchAsync');
 
 const Thread = require('./models/thread');
 const Post = require('./models/post');
+const User = require('./models/user');
 
 const bcrypt = require('bcrypt');
-const User = require('./models/user');
 const methodOverride = require('method-override');
-const thread = require('./models/thread');
 
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
@@ -63,89 +64,67 @@ app.get('/', (req, res) => {
     res.render('home');
 })
 
-app.post('/threads', isLoggedIn, async (req, res) => {
+app.post('/threads', isLoggedIn, validateThread, catchAsync(async (req, res) => {
     const thread = new Thread(req.body);
     thread.author = req.user._id;
     await thread.save();
     res.redirect('/threads');
-})
+}));
 
-app.get('/threads', async (req, res) => {
+app.get('/threads', catchAsync(async (req, res) => {
     const threads = await Thread.find({});
     res.render('threads/index', { threads });
-});
+}));
 
 app.get('/threads/new', isLoggedIn,  (req, res) => {
     res.render('threads/new')
 });
 
-app.get('/threads/:id', async (req, res) => {
+app.get('/threads/:id', catchAsync(async (req, res) => {
     const threadId = req.params.id;
     const thread = await Thread.findById(req.params.id);
     const posts = await Post.find({ thread: threadId }).sort({ createdAt: 1 });
     res.render('threads/show', { thread, posts });
-});
+}));
 
-app.delete('/threads/:id', isLoggedIn, async (req, res) => {
-    const { id } = req.params;
-    const thread = await Thread.findById(id);
-
-    if (!thread) {
-        req.flash('error', 'スレッドが見つかりません');
-        return res.redirect('/threads');
-    }
-
-    if (!thread.author.equals(req.user._id)) {
-        req.flash('error', '権限がありません');
-        return res.redirect('/threads');
-    }
-
-    await Post.deleteMany({ thread: id });
-    await Thread.findByIdAndDelete(id);
+app.delete('/threads/:id', isLoggedIn, isThreadExist, isThreadAuthor, catchAsync(async (req, res) => {
+    await Post.deleteMany({ thread: req.thread._id });
+    await req.thread.deleteOne();
 
     req.flash('success', 'スレッドを削除しました');
     res.redirect('/threads');
-});
+}));
 
-app.get('/threads/:id/edit', isLoggedIn, async(req, res) => {
-    const thread = await Thread.findById(req.params.id);
-
-    if (!thread) {
-        req.flash('error', 'スレッドが見つかりません');
-        return res.redirect('/threads');
-    }
-
+app.get('/threads/:id/edit', isLoggedIn, isThreadExist, isThreadAuthor, catchAsync(async(req, res) => {
     const FIVE_MINUTES = 5 * 60 * 1000;
-    const isWithinTime = (Date.now() - thread.createdAt.getTime()) < FIVE_MINUTES;
+    const isWithinTime = (Date.now() - req.thread.createdAt.getTime()) < FIVE_MINUTES;
 
-    if (!req.user || !thread.author.equals(req.user._id) || !isWithinTime) { 
+    if (!isWithinTime) { 
         req.flash('error', 'スレッドは作成から5分以内のみ編集可能です');
         return res.redirect('/threads');
     }
 
-    res.render('threads/edit', { thread });
-});
+    res.render('threads/edit', { thread: req.thread });
+}));
 
-app.put('/threads/:id', isLoggedIn, async (req, res) => {
-    const thread = await Thread.findById(req.params.id);
-
+app.put('/threads/:id', isLoggedIn, isThreadExist, isThreadAuthor, validateThread, catchAsync(async (req, res) => {
     const FIVE_MINUTES = 5 * 60 * 1000;
-    const isWithinTime = (Date.now() - thread.createdAt.getTime()) < FIVE_MINUTES;
+    const isWithinTime = (Date.now() - req.thread.createdAt.getTime()) < FIVE_MINUTES;
 
-    if (!req.user || !thread.author.equals(req.user._id) || !isWithinTime) { 
+    if (!isWithinTime) { 
         req.flash('error', 'スレッドは作成から5分以内のみ編集可能です');
         return res.redirect('/threads');
     }
 
-    thread.title = req.body.title;
-    thread.content = req.body.content;
-    await thread.save();
+    req.thread.title = req.body.title;
+    req.thread.content = req.body.content;
+    await req.thread.save();
 
     req.flash('success', 'スレッドを更新しました');
     res.redirect('/threads');
-})
+}));
 
-app.post('/threads/:id/posts', isLoggedIn, async (req, res) => {
+app.post('/threads/:id/posts', isLoggedIn, catchAsync(async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
     await Post.create({
@@ -154,42 +133,28 @@ app.post('/threads/:id/posts', isLoggedIn, async (req, res) => {
         author: req.user._id
     });
     res.redirect(`/threads/${id}`);
-});
+}));
 
-app.put('/posts/:id', isLoggedIn, async (req, res) => {
-    const { id } = req.params;
-    const post = await Post.findById(id);
-    if (!post.author.equals(req.user._id)){
-        req.flash('error', '権限がありません');
-        return res.redirect(`/threads/${post.thread}`);
-    }
-
-    post.content = req.body.content;
-    post.edited = true;
-    post.editedAt = Date.now();
-    await post.save();
+app.put('/posts/:id', isLoggedIn, isPostExist, isPostAuthor, validatePost, catchAsync(async (req, res) => {
+    req.post.content = req.body.content;
+    req.post.edited = true;
+    req.post.editedAt = Date.now();
+    await req.post.save();
     req.flash('success', '投稿を更新しました');
-    res.redirect(`/threads/${post.thread}`);
-});
+    res.redirect(`/threads/${req.post.thread}`);
+}));
 
-app.delete('/posts/:id', isLoggedIn, async (req, res) => {
-    const { id } = req.params;
-    const post = await Post.findById(id);
-    if (!post.author.equals(req.user._id)){
-        req.flash('error', '権限がありません');
-        return res.redirect(`/threads/${post.thread}`);
-    }
-
-    await Post.findByIdAndDelete(id);
+app.delete('/posts/:id', isLoggedIn, isPostExist, isPostAuthor, catchAsync(async (req, res) => {
+    await req.post.deleteOne();
     req.flash('success', '投稿を削除しました');
-    res.redirect(`/threads/${post.thread}`);
-});
+    res.redirect(`/threads/${req.post.thread}`);
+}));
 
 app.get('/register', (req, res) => {
     res.render('users/register');
 });
 
-app.post('/register', async (req, res, next) => {
+app.post('/register', catchAsync(async (req, res, next) => {
     try{
         const { username, password } = req.body;
         const user = new User({ username });
@@ -205,7 +170,7 @@ app.post('/register', async (req, res, next) => {
     } catch (e) {
         res.redirect('/register');
     }
-});
+}));
 
 app.get('/login', (req, res) => {
     res.render('users/login');
@@ -234,9 +199,17 @@ app.get('/logout', (req, res, next) => {
     })
 })
 
-app.use((req, res) => {
-    res.send('そんなパスはありません');
+app.use((req, res, next) => {
+    next(new ExpressError('ページが見つかりませんでした', 404));
 });
+
+app.use((err, req, res, next) =>{
+    const { statusCode = 500 } = err;
+    if (!err.message) {
+        err.message = '問題が起きました'
+    }
+    res.status(statusCode).render('error', { err });
+})
 
 app.listen(3000, () => {
     console.log('ポート3000でリクエスト待受中...');
