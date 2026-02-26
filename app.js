@@ -72,7 +72,10 @@ app.post('/threads', isLoggedIn, validateThread, catchAsync(async (req, res) => 
 }));
 
 app.get('/threads', catchAsync(async (req, res) => {
-    const threads = await Thread.find({});
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const threads = await Thread.find({ createdAt: { $gte: oneMonthAgo } }).populate('author').sort({ createdAt: -1 });
     res.render('threads/index', { threads });
 }));
 
@@ -83,7 +86,7 @@ app.get('/threads/new', isLoggedIn,  (req, res) => {
 app.get('/threads/:id', catchAsync(async (req, res) => {
     const threadId = req.params.id;
     const thread = await Thread.findById(req.params.id);
-    const posts = await Post.find({ thread: threadId }).sort({ createdAt: 1 });
+    const posts = await Post.find({ thread: threadId }).populate('author').sort({ createdAt: 1 });
     res.render('threads/show', { thread, posts });
 }));
 
@@ -127,6 +130,13 @@ app.put('/threads/:id', isLoggedIn, isThreadExist, isThreadAuthor, validateThrea
 app.post('/threads/:id/posts', isLoggedIn, catchAsync(async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
+
+    const postCount = await Post.countDocuments({ thread: id });
+    if (postCount >= 500) {
+        req.flash('error', 'このスレッドは書き込み上限に達しました');
+        return res.redirect(`/threads/${id}`);
+    }
+
     await Post.create({
         content,
         thread: id,

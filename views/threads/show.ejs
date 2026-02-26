@@ -18,8 +18,14 @@
   </div>
 </div>
 
-<% for (let post of posts) { %>
-    <div class="mb-3 p-3 bg-body-tertiary rounded-3">
+<% posts.forEach((post, index) => { %>
+    <div class="mb-3 p-3 rounded-3 <%= (currentUser && post.author._id.equals(currentUser._id)) ? 'bg-info-subtle' : 'bg-body-tertiary' %>">
+        <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center">
+                <p class="mb-0">[<%= index + 1 %>] <%= post.author.username %></p>
+            </div>
+            <small class="text-muted ms-2"><%= post.createdAt.toLocaleString() %> <% if(post.edited) { %> (編集済み) <% } %></small>
+        </div>
         <%= post.content %>
         <% if (currentUser && post.author.equals(currentUser._id)) { %>
             <button type="button" class="edit-btn btn btn-success ms-3" data-id="<%= post._id %>" data-content="<%= post.content %>">編集する</button>
@@ -28,7 +34,7 @@
             <button type="submit" class="delete-btn btn btn-danger ms-3 delete-trigger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="<%= post._id %>">削除する</button>
         <% } %>
     </div>
-<% } %>
+<% }) %>
 
 <% if (currentUser) { %>
     <div id="editNotice" class="alert alert-warning d-none">

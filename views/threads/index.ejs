@@ -17,7 +17,12 @@
     %>
 
     <div class="card mb-3">
-        <h5 class="card-header">Featured</h5>
+        <div class="card-header  d-flex align-items-center">
+            <div class="d-flex align-items-center">
+                <h5 class="mb-0"><%= thread.author.username %></h5>
+            </div>
+            <small class="text-muted ms-2"><%= thread.createdAt.toLocaleString() %></small>
+        </div>
         <div class="card-body">
             <h5 class="card-title"><%= thread.title %></h5>
             <p class="card-text"><%= thread.content %></p>
