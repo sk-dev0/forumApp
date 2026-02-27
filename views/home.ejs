@@ -1,12 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ホームページ</title>
-</head>
-<body>
-    <h1>ホームページ</h1>
-    <a href="/threads/">スレッド一覧へ</a>
-</body>
-</html>
+<% layout('layouts/boilerplate') %>
+
+<div class="d-flex align-items-center justify-content-center pt-5 mt-5">
+    <div class="text-center px-4">
+        <h1 class="display-3 fw-bold mb-3">まったり掲示板</h1>
+        <p class="lead text-muted mb-5">気軽に話せる、のんびり掲示板</p>
+
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="/threads" class="btn btn-primary btn-lg px-5">スレッド一覧へ</a>
+            <% if (!currentUser) { %>
+                <a href="/register" class="btn btn-outline-secondary btn-lg px-5">新規登録</a>
+            <% } %>
+        </div>
+
+        <% if (!currentUser) { %>
+            <p class="mt-3 text-muted">
+                すでにアカウントをお持ちの方は<a href="/login">こちら</a>
+            </p>
+        <% } %>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-4">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body p-4">
+                    <div class="fs-1 mb-3">💬</div>
+                    <h5 class="card-title fw-bold">気軽に話せる</h5>
+                    <p class="card-text text-muted">堅苦しくない雰囲気でなんでも話せます。日常の出来事から深い議論まで。</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body p-4">
+                    <div class="fs-1 mb-3">🔍</div>
+                    <h5 class="card-title fw-bold">タグで探せる</h5>
+                    <p class="card-text text-muted">興味のあるジャンルのスレッドをタグで簡単に絞り込むことができます。</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body p-4">
+                    <div class="fs-1 mb-3">🌿</div>
+                    <h5 class="card-title fw-bold">のんびり参加</h5>
+                    <p class="card-text text-muted">無料で登録してすぐに参加できます。自分のペースでまったりどうぞ。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

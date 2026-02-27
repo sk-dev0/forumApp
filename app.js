@@ -7,7 +7,7 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const flash = require('connect-flash');
-const { isLoggedIn, isThreadAuthor, isThreadExist, isPostAuthor, isPostExist, validateThread, validatePost, normalizeTags} = require('./middleware');
+const { isLoggedIn, isThreadAuthor, isThreadExist, isPostAuthor, isPostExist, validateThread, validatePost, normalizeTags, validateUser} = require('./middleware');
 const ExpressError = require('./utils/ExpressError');
 const catchAsync = require('./utils/catchAsync');
 
@@ -88,8 +88,33 @@ app.get('/threads', catchAsync(async (req, res) => {
         filter.tags = req.query.tag;
     }
 
-    const threads = await Thread.find(filter).populate('author').sort({ createdAt: -1 });
-    res.render('threads/index', { threads, currentTag: req.query.tag, tagCategories });
+    if (req.query.keyword) {
+        filter.title = { $regex: req.query.keyword, $options: 'i' };
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
+
+    const totalThreads = await Thread.countDocuments(filter);
+    const totalPages = Math.ceil(totalThreads / limit);
+
+    const threads = await Thread.find(filter).populate('author').sort({ createdAt: -1 }).skip(skip).limit(limit);
+
+    const threadsWithCount = await Promise.all(threads.map(async thread => {
+        const postCount = await Post.countDocuments({ thread: thread._id });
+        thread.postCount = postCount;
+        return thread;
+    }));
+
+    res.render('threads/index', { 
+        threads: threadsWithCount, 
+        currentTag: req.query.tag, 
+        currentKeyword: req.query.keyword, 
+        tagCategories,
+        currentPage: page,
+        totalPages
+    });
 }));
 
 app.get('/threads/new', isLoggedIn,  (req, res) => {
@@ -177,7 +202,7 @@ app.get('/register', (req, res) => {
     res.render('users/register');
 });
 
-app.post('/register', catchAsync(async (req, res, next) => {
+app.post('/register', validateUser, catchAsync(async (req, res, next) => {
     try{
         const { username, password } = req.body;
         const user = new User({ username });

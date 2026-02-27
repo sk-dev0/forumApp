@@ -24,3 +24,19 @@ module.exports.postSchema = Joi.object({
         'string.max': '投稿内容は500文字以内にしてください'
     })
 });
+
+module.exports.userSchema = Joi.object({
+    username: Joi.string().min(3).max(20).pattern(/^[a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]+$/).required().messages({
+    'string.empty': 'ユーザー名は必須です',
+    'string.pattern.base': 'ユーザー名は半角英数字・ひらがな・カタカナ・漢字のみ使用できます',
+    'string.min': 'ユーザー名は3文字以上にしてください',
+    'string.max': 'ユーザー名は20文字以内にしてください',
+    'any.required': 'ユーザー名は必須です'
+    }),
+    password: Joi.string().min(8).pattern(/^[a-zA-Z0-9!@#$%^&*]+$/).required().messages({
+        'string.empty': 'パスワードは必須です',
+        'string.min': 'パスワードは8文字以上にしてください',
+        'string.pattern.base': 'パスワードは半角英数字と記号(!@#$%^&*)のみ使用できます',
+        'any.required': 'パスワードは必須です'
+    })
+});

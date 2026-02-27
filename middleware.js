@@ -1,5 +1,5 @@
 const ExpressError = require('./utils/ExpressError');
-const { threadSchema, postSchema } = require('./schemas');
+const { threadSchema, postSchema, userSchema } = require('./schemas');
 const Thread = require('./models/thread');
 const Post = require('./models/post');
 
@@ -72,6 +72,16 @@ module.exports.isPostAuthor = async(req, res, next) =>{
 module.exports.normalizeTags = (req, res, next) => {
     if (req.body.tags && !Array.isArray(req.body.tags)) {
         req.body.tags = [req.body.tags];
+    }
+    next();
+};
+
+module.exports.validateUser = (req, res, next) => {
+    const { error } = userSchema.validate(req.body);
+    if (error) {
+        const msg = error.details[0].message;
+        req.flash('error', msg);
+        return res.redirect('/register');
     }
     next();
 };

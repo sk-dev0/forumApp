@@ -14,6 +14,17 @@
         <strong>🔍 スレッドを絞り込む</strong>
     </div>
     <div class="card-body">
+        <form action="/threads" method="GET" class="d-flex gap-2 mb-3 align-items-center">
+            <% if (currentTag) { %>
+                <input type="hidden" name="tag" value="<%= currentTag %>">
+            <% } %>
+            <input type="text" class="form-control form-control-sm" name="keyword" placeholder="タイトルで検索..." value="<%= currentKeyword || '' %>" style="max-width: 200px;">
+            <button type="submit" class="btn btn-primary btn-sm px-4 text-nowrap">検索</button>
+            <% if (currentKeyword) { %>
+                <a href="/threads<%= currentTag ? '?tag=' + currentTag : '' %>" class="btn btn-outline-secondary btn-sm px-4 text-nowrap">クリア</a>
+            <% } %>
+        </form>
+
         <div class="d-flex flex-wrap gap-2 mb-2">
             <a href="/threads" class="btn btn-sm <%= !currentTag ? 'btn-secondary' : 'btn-outline-secondary' %>">
                 すべて
@@ -52,7 +63,8 @@
                 <h5 class="mb-0"><%= thread.author.username %></h5>
             </div>
             <small class="text-muted ms-2"><%= thread.createdAt.toLocaleString() %></small>
-            <div class="ms-auto d-flex gap-1">
+            <div class="ms-auto d-flex gap-2 align-items-center">
+                <small class="fw-bold text-success">💬 <%= thread.postCount %>件</small>
                 <% for (let tag of thread.tags) { %>
                     <a href="/threads?tag=<%= tag %>" class="badge bg-secondary text-decoration-none">
                         <%= tag %>
@@ -76,6 +88,26 @@
             <% } %>
         </div>
     </div>
+<% } %>
+
+<% if (totalPages > 1) { %>
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="/threads?page=<%= currentPage - 1 %><%= currentTag ? '&tag=' + currentTag : '' %><%= currentKeyword ? '&keyword=' + currentKeyword : '' %>">前へ</a>
+            </li>
+
+            <% for (let i = 1; i <= totalPages; i++) { %>
+                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                    <a class="page-link" href="/threads?page=<%= i %><%= currentTag ? '&tag=' + currentTag : '' %><%= currentKeyword ? '&keyword=' + currentKeyword : '' %>"><%= i %></a>
+                </li>
+            <% } %>
+
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="/threads?page=<%= currentPage + 1 %><%= currentTag ? '&tag=' + currentTag : '' %><%= currentKeyword ? '&keyword=' + currentKeyword : '' %>">次へ</a>
+            </li>
+        </ul>
+    </nav>
 <% } %>
 
 <%- include('../partials/deleteModal') %>
