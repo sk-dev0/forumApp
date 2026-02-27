@@ -1,12 +1,35 @@
-const Joi = require('joi');
+const BaseJoi = require('joi');
+const sanitizeHtml = require('sanitize-html');
+
+const extension = (joi) => ({
+    type: 'string',
+    base: joi.string(),
+    messages: {
+        'string.escapeHTML': '{{#label}} must not include HTML!'
+    },
+    rules: {
+        escapeHTML: {
+            validate(value, helpers) {
+                const clean = sanitizeHtml(value, {
+                    allowedTags: [],
+                    allowedAttributes: {},
+                });
+                if (clean !== value) return helpers.error('string.escapeHTML', { value })
+                return clean;
+            }
+        }
+    }
+});
+
+const Joi = BaseJoi.extend(extension);
 
 module.exports.threadSchema = Joi.object({
-    title: Joi.string().required().messages({
+    title: Joi.string().required().escapeHTML().messages({
         'string.empty': 'タイトルは必須です',
         'any.required': 'タイトルは必須です',
         'string.max': 'タイトルは100文字以内にしてください'
     }),
-    content: Joi.string().required().messages({
+    content: Joi.string().required().escapeHTML().messages({
         'string.empty': '本文は必須です',
         'any.required': '本文は必須です',
         'string.max': '本文は500文字以内にしてください'
@@ -18,7 +41,7 @@ module.exports.threadSchema = Joi.object({
 });
 
 module.exports.postSchema = Joi.object({
-    content: Joi.string().required().messages({
+    content: Joi.string().required().escapeHTML().messages({
         'string.empty': '投稿内容は必須です',
         'any.required': '投稿内容は必須です',
         'string.max': '投稿内容は500文字以内にしてください'
