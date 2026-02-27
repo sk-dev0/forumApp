@@ -7,23 +7,13 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const flash = require('connect-flash');
-const { isLoggedIn, isThreadAuthor, isThreadExist, isPostAuthor, isPostExist, validateThread, validatePost, normalizeTags, validateUser} = require('./middleware');
 const ExpressError = require('./utils/ExpressError');
-const catchAsync = require('./utils/catchAsync');
-
-const Thread = require('./models/thread');
-const Post = require('./models/post');
+const methodOverride = require('method-override');
 const User = require('./models/user');
 
-const bcrypt = require('bcrypt');
-const methodOverride = require('method-override');
-
-const tagCategories = {
-    '情報・知識': ['ニュース・時事', '政治・社会', '科学・技術', '歴史・文化'],
-    '趣味・娯楽': ['スポーツ', 'ゲーム', '音楽', '映画・アニメ', '読書・漫画'],
-    'ライフスタイル': ['グルメ・料理', '旅行', 'ファッション', '健康・美容'],
-    'コミュニティ': ['雑談', '質問', '相談', '議論・ディベート'],
-};
+const userRoutes = require('./routes/users');
+const threadRoutes = require('./routes/threads');
+const postRoutes = require('./routes/posts');
 
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
@@ -66,185 +56,12 @@ mongoose.connect('mongodb://127.0.0.1:27017/forumApp')
         console.log(err);
     });
 
+app.use('/', userRoutes);
+app.use('/threads', threadRoutes);
+app.use('/posts', postRoutes);
 
 app.get('/', (req, res) => {
     res.render('home');
-})
-
-app.post('/threads', isLoggedIn, normalizeTags, validateThread, catchAsync(async (req, res) => {
-    const thread = new Thread(req.body);
-    thread.author = req.user._id;
-    await thread.save();
-    res.redirect('/threads');
-}));
-
-app.get('/threads', catchAsync(async (req, res) => {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    const filter = { createdAt: { $gte: oneMonthAgo } };
-
-    if (req.query.tag) {
-        filter.tags = req.query.tag;
-    }
-
-    if (req.query.keyword) {
-        filter.title = { $regex: req.query.keyword, $options: 'i' };
-    }
-
-    const page = parseInt(req.query.page) || 1;
-    const limit = 20;
-    const skip = (page - 1) * limit;
-
-    const totalThreads = await Thread.countDocuments(filter);
-    const totalPages = Math.ceil(totalThreads / limit);
-
-    const threads = await Thread.find(filter).populate('author').sort({ createdAt: -1 }).skip(skip).limit(limit);
-
-    const threadsWithCount = await Promise.all(threads.map(async thread => {
-        const postCount = await Post.countDocuments({ thread: thread._id });
-        thread.postCount = postCount;
-        return thread;
-    }));
-
-    res.render('threads/index', { 
-        threads: threadsWithCount, 
-        currentTag: req.query.tag, 
-        currentKeyword: req.query.keyword, 
-        tagCategories,
-        currentPage: page,
-        totalPages
-    });
-}));
-
-app.get('/threads/new', isLoggedIn,  (req, res) => {
-    res.render('threads/new', { tagCategories });
-});
-
-app.get('/threads/:id', catchAsync(async (req, res) => {
-    const threadId = req.params.id;
-    const thread = await Thread.findById(req.params.id);
-    const posts = await Post.find({ thread: threadId }).populate('author').sort({ createdAt: 1 });
-    res.render('threads/show', { thread, posts });
-}));
-
-app.delete('/threads/:id', isLoggedIn, isThreadExist, isThreadAuthor, catchAsync(async (req, res) => {
-    await Post.deleteMany({ thread: req.thread._id });
-    await req.thread.deleteOne();
-
-    req.flash('success', 'スレッドを削除しました');
-    res.redirect('/threads');
-}));
-
-app.get('/threads/:id/edit', isLoggedIn, isThreadExist, isThreadAuthor, catchAsync(async(req, res) => {
-    const FIVE_MINUTES = 5 * 60 * 1000;
-    const isWithinTime = (Date.now() - req.thread.createdAt.getTime()) < FIVE_MINUTES;
-
-    if (!isWithinTime) { 
-        req.flash('error', 'スレッドは作成から5分以内のみ編集可能です');
-        return res.redirect('/threads');
-    }
-
-    res.render('threads/edit', { thread: req.thread, tagCategories });
-}));
-
-app.put('/threads/:id', isLoggedIn, isThreadExist, isThreadAuthor, validateThread, catchAsync(async (req, res) => {
-    const FIVE_MINUTES = 5 * 60 * 1000;
-    const isWithinTime = (Date.now() - req.thread.createdAt.getTime()) < FIVE_MINUTES;
-
-    if (!isWithinTime) { 
-        req.flash('error', 'スレッドは作成から5分以内のみ編集可能です');
-        return res.redirect('/threads');
-    }
-
-    req.thread.title = req.body.title;
-    req.thread.content = req.body.content;
-    await req.thread.save();
-
-    req.flash('success', 'スレッドを更新しました');
-    res.redirect('/threads');
-}));
-
-app.post('/threads/:id/posts', isLoggedIn, catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const { content } = req.body;
-
-    const postCount = await Post.countDocuments({ thread: id });
-    if (postCount >= 500) {
-        req.flash('error', 'このスレッドは書き込み上限に達しました');
-        return res.redirect(`/threads/${id}`);
-    }
-
-    await Post.create({
-        content,
-        thread: id,
-        author: req.user._id
-    });
-    res.redirect(`/threads/${id}`);
-}));
-
-app.put('/posts/:id', isLoggedIn, isPostExist, isPostAuthor, validatePost, catchAsync(async (req, res) => {
-    req.post.content = req.body.content;
-    req.post.edited = true;
-    req.post.editedAt = Date.now();
-    await req.post.save();
-    req.flash('success', '投稿を更新しました');
-    res.redirect(`/threads/${req.post.thread}`);
-}));
-
-app.delete('/posts/:id', isLoggedIn, isPostExist, isPostAuthor, catchAsync(async (req, res) => {
-    await req.post.deleteOne();
-    req.flash('success', '投稿を削除しました');
-    res.redirect(`/threads/${req.post.thread}`);
-}));
-
-app.get('/register', (req, res) => {
-    res.render('users/register');
-});
-
-app.post('/register', validateUser, catchAsync(async (req, res, next) => {
-    try{
-        const { username, password } = req.body;
-        const user = new User({ username });
-
-        const registeredUser = await User.register(user, password);
-
-        req.login(registeredUser, err => {
-            if (err) {
-                return next(err);
-            }
-            res.redirect('/threads');
-        });
-    } catch (e) {
-        res.redirect('/register');
-    }
-}));
-
-app.get('/login', (req, res) => {
-    res.render('users/login');
-})
-
-app.post('/login',
-    passport.authenticate('local', {
-        failureRedirect: '/login',
-        failureFlash: 'ユーザー名またはパスワードが違います',
-    }),
-    (req, res) => {
-        req.flash('success', 'おかえりなさい！！');
-        res.redirect('/threads');
-    }
-);
-
-
-app.get('/logout', (req, res, next) => {
-    req.logout(err => {
-        if (err) {
-            req.flash('error', 'ログアウトに失敗しました');
-            return next(err);
-        }
-        req.flash('success', 'ログアウトしました');
-        res.redirect('/threads');
-    })
 })
 
 app.use((req, res, next) => {
