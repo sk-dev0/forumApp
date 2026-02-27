@@ -1,6 +1,6 @@
 <% layout('layouts/boilerplate') %>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3">
     <h1>スレッド一覧</h1>
     <% if (currentUser) { %>
         <a href="/threads/new" class="btn btn-primary mb-3 btn-lg">スレッド新規作成</a>
@@ -18,19 +18,19 @@
             <% if (currentTag) { %>
                 <input type="hidden" name="tag" value="<%= currentTag %>">
             <% } %>
-            <input type="text" class="form-control form-control-sm" name="keyword" placeholder="タイトルで検索..." value="<%= currentKeyword || '' %>" style="max-width: 200px;">
+            <input type="text" class="form-control form-control-sm" name="keyword" placeholder="タイトルで検索..." value="<%= currentKeyword || '' %>" style="max-width: 250px;">
             <button type="submit" class="btn btn-primary btn-sm px-4 text-nowrap">検索</button>
             <% if (currentKeyword) { %>
                 <a href="/threads<%= currentTag ? '?tag=' + currentTag : '' %>" class="btn btn-outline-secondary btn-sm px-4 text-nowrap">クリア</a>
             <% } %>
         </form>
 
-        <div class="d-flex flex-wrap gap-2 mb-2">
-            <a href="/threads" class="btn btn-sm <%= !currentTag ? 'btn-secondary' : 'btn-outline-secondary' %>">
+        <div class="d-flex flex-nowrap gap-2 mb-2 overflow-auto">
+            <a href="/threads" class="btn btn-sm flex-shrink-0 <%= !currentTag ? 'btn-secondary' : 'btn-outline-secondary' %>">
                 すべて
             </a>
             <% for (let category in tagCategories) { %>
-                <button type="button" class="btn btn-sm btn-outline-primary category-btn" data-category="<%= category %>">
+                <button type="button" class="btn btn-sm btn-outline-primary category-btn flex-shrink-0" data-category="<%= category %>">
                     <%= category %>
                 </button>
             <% } %>
@@ -58,20 +58,25 @@
     %>
 
     <div class="card mb-3">
-        <div class="card-header  d-flex align-items-center">
-            <div class="d-flex align-items-center">
-                <h5 class="mb-0"><%= thread.author.username %></h5>
+        <div class="card-header">
+        <!-- PC: 1段横並び / スマホ: 2段 -->
+            <div class="d-flex flex-column flex-md-row align-items-md-center">
+                <!-- 左側: ユーザー名と投稿時間 -->
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="mb-0"><%= thread.author.username %></h5>
+                    <small class="text-muted"><%= thread.createdAt.toLocaleString() %></small>
+                </div>
+                <!-- 右側: ポスト数とタグ -->
+                <div class="d-flex align-items-center gap-2 ms-md-auto mt-1 mt-md-0">
+                    <small class="fw-bold text-primary text-nowrap">💬 <%= thread.postCount %>件</small>
+                    <% for (let tag of thread.tags) { %>
+                        <a href="/threads?tag=<%= tag %>" class="badge bg-secondary text-decoration-none">
+                            <%= tag %>
+                        </a>
+                    <% } %>
+                </div>
             </div>
-            <small class="text-muted ms-2"><%= thread.createdAt.toLocaleString() %></small>
-            <div class="ms-auto d-flex gap-2 align-items-center">
-                <small class="fw-bold text-success">💬 <%= thread.postCount %>件</small>
-                <% for (let tag of thread.tags) { %>
-                    <a href="/threads?tag=<%= tag %>" class="badge bg-secondary text-decoration-none">
-                        <%= tag %>
-                    </a>
-                <% } %>
-            </div>
-        </div>
+        </div> 
         <div class="card-body">
             <h5 class="card-title"><%= thread.title %></h5>
             <p class="card-text"><%= thread.content %></p>

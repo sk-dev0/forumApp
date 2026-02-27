@@ -18,8 +18,15 @@
   </div>
 </div>
 
-<% posts.forEach((post, index) => { %>
-    <div class="mb-3 p-3 rounded-3 <%= (currentUser && post.author._id.equals(currentUser._id)) ? 'bg-info-subtle' : 'bg-body-tertiary' %>">
+<% posts.forEach((post, index) => { 
+    let bgClass = 'bg-body-tertiary';
+    if (currentUser && post.author._id.equals(currentUser._id)) {
+        bgClass = 'bg-info-subtle';
+    } else if (post.author._id.equals(thread.author._id)) {
+        bgClass = 'bg-warning-subtle';
+    }
+%>
+    <div class="mb-3 p-3 rounded-3 <%= bgClass %>">
         <div class="d-flex align-items-center">
             <div class="d-flex align-items-center">
                 <p class="mb-0">[<%= index + 1 %>] <%= post.author.username %></p>
