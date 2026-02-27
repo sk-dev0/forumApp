@@ -21,6 +21,8 @@ const userRoutes = require('./routes/users');
 const threadRoutes = require('./routes/threads');
 const postRoutes = require('./routes/posts');
 
+app.set('trust proxy', 1);
+
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
