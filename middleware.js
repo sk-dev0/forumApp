@@ -68,3 +68,10 @@ module.exports.isPostAuthor = async(req, res, next) =>{
     }
     next();
 }
+
+module.exports.normalizeTags = (req, res, next) => {
+    if (req.body.tags && !Array.isArray(req.body.tags)) {
+        req.body.tags = [req.body.tags];
+    }
+    next();
+};

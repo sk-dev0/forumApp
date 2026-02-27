@@ -9,6 +9,36 @@
     <% } %>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">
+        <strong>🔍 スレッドを絞り込む</strong>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 mb-2">
+            <a href="/threads" class="btn btn-sm <%= !currentTag ? 'btn-secondary' : 'btn-outline-secondary' %>">
+                すべて
+            </a>
+            <% for (let category in tagCategories) { %>
+                <button type="button" class="btn btn-sm btn-outline-primary category-btn" data-category="<%= category %>">
+                    <%= category %>
+                </button>
+            <% } %>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <% for (let category in tagCategories) { %>
+                <div class="tag-group d-none" data-group="<%= category %>">
+                    <% for (let tag of tagCategories[category]) { %>
+                        <a href="/threads?tag=<%= tag %>" class="btn btn-sm <%= currentTag === tag ? 'btn-secondary' : 'btn-outline-secondary' %>">
+                            <%= tag %>
+                        </a>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+
 <% for (let thread of threads) { %>
 
     <% 
@@ -22,6 +52,13 @@
                 <h5 class="mb-0"><%= thread.author.username %></h5>
             </div>
             <small class="text-muted ms-2"><%= thread.createdAt.toLocaleString() %></small>
+            <div class="ms-auto d-flex gap-1">
+                <% for (let tag of thread.tags) { %>
+                    <a href="/threads?tag=<%= tag %>" class="badge bg-secondary text-decoration-none">
+                        <%= tag %>
+                    </a>
+                <% } %>
+            </div>
         </div>
         <div class="card-body">
             <h5 class="card-title"><%= thread.title %></h5>
@@ -61,5 +98,27 @@
             });
         });
     }
+
+    const categoryBtns = document.querySelectorAll('.category-btn');
+
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const group = document.querySelector(`.tag-group[data-group="${btn.dataset.category}"]`);
+
+            // 他のグループを閉じる
+            document.querySelectorAll('.tag-group').forEach(g => {
+                if (g !== group) {
+                    g.classList.add('d-none');
+                    document.querySelector(`.category-btn[data-category="${g.dataset.group}"]`)
+                        .classList.replace('btn-primary', 'btn-outline-primary');
+                }
+            });
+
+            // クリックしたグループを開閉
+            group.classList.toggle('d-none');
+            btn.classList.toggle('btn-outline-primary');
+            btn.classList.toggle('btn-primary');
+        });
+    });
     
 </script>

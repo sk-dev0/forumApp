@@ -7,7 +7,7 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const flash = require('connect-flash');
-const { isLoggedIn, isThreadAuthor, isThreadExist, isPostAuthor, isPostExist, validateThread, validatePost} = require('./middleware');
+const { isLoggedIn, isThreadAuthor, isThreadExist, isPostAuthor, isPostExist, validateThread, validatePost, normalizeTags} = require('./middleware');
 const ExpressError = require('./utils/ExpressError');
 const catchAsync = require('./utils/catchAsync');
 
@@ -17,6 +17,13 @@ const User = require('./models/user');
 
 const bcrypt = require('bcrypt');
 const methodOverride = require('method-override');
+
+const tagCategories = {
+    '情報・知識': ['ニュース・時事', '政治・社会', '科学・技術', '歴史・文化'],
+    '趣味・娯楽': ['スポーツ', 'ゲーム', '音楽', '映画・アニメ', '読書・漫画'],
+    'ライフスタイル': ['グルメ・料理', '旅行', 'ファッション', '健康・美容'],
+    'コミュニティ': ['雑談', '質問', '相談', '議論・ディベート'],
+};
 
 app.engine('ejs', engine);
 app.set('views', path.join(__dirname, 'views'));
@@ -64,7 +71,7 @@ app.get('/', (req, res) => {
     res.render('home');
 })
 
-app.post('/threads', isLoggedIn, validateThread, catchAsync(async (req, res) => {
+app.post('/threads', isLoggedIn, normalizeTags, validateThread, catchAsync(async (req, res) => {
     const thread = new Thread(req.body);
     thread.author = req.user._id;
     await thread.save();
@@ -75,12 +82,18 @@ app.get('/threads', catchAsync(async (req, res) => {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    const threads = await Thread.find({ createdAt: { $gte: oneMonthAgo } }).populate('author').sort({ createdAt: -1 });
-    res.render('threads/index', { threads });
+    const filter = { createdAt: { $gte: oneMonthAgo } };
+
+    if (req.query.tag) {
+        filter.tags = req.query.tag;
+    }
+
+    const threads = await Thread.find(filter).populate('author').sort({ createdAt: -1 });
+    res.render('threads/index', { threads, currentTag: req.query.tag, tagCategories });
 }));
 
 app.get('/threads/new', isLoggedIn,  (req, res) => {
-    res.render('threads/new')
+    res.render('threads/new', { tagCategories });
 });
 
 app.get('/threads/:id', catchAsync(async (req, res) => {
@@ -107,7 +120,7 @@ app.get('/threads/:id/edit', isLoggedIn, isThreadExist, isThreadAuthor, catchAsy
         return res.redirect('/threads');
     }
 
-    res.render('threads/edit', { thread: req.thread });
+    res.render('threads/edit', { thread: req.thread, tagCategories });
 }));
 
 app.put('/threads/:id', isLoggedIn, isThreadExist, isThreadAuthor, validateThread, catchAsync(async (req, res) => {

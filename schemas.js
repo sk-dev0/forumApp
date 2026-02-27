@@ -10,6 +10,10 @@ module.exports.threadSchema = Joi.object({
         'string.empty': '本文は必須です',
         'any.required': '本文は必須です',
         'string.max': '本文は500文字以内にしてください'
+    }),
+    tags: Joi.array().items(Joi.string()).min(1).required().messages({
+        'array.min': 'タグを1つ以上選択してください',
+        'any.required': 'タグを1つ以上選択してください'
     })
 });
 
