@@ -31,15 +31,17 @@
             <div class="d-flex align-items-center">
                 <p class="mb-0">[<%= index + 1 %>] <%= post.author.username %></p>
             </div>
-            <small class="text-muted ms-2"><%= post.createdAt.toLocaleString() %> <% if(post.edited) { %> (編集済み) <% } %></small>
+            <small class="text-muted ms-2"><%= post.createdAt.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) %> <% if(post.edited) { %> (編集済み) <% } %></small>
         </div>
         <%= post.content %>
-        <% if (currentUser && post.author.equals(currentUser._id)) { %>
-            <button type="button" class="edit-btn btn btn-success ms-3" data-id="<%= post._id %>" data-content="<%= post.content %>">編集する</button>
-        <% } %>
-        <% if (currentUser && post.author.equals(currentUser._id)) { %>
-            <button type="submit" class="delete-btn btn btn-danger ms-3 delete-trigger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="<%= post._id %>">削除する</button>
-        <% } %>
+        <div class="mt-2 d-flex gap-2">
+            <% if (currentUser && post.author.equals(currentUser._id)) { %>
+                <button type="button" class="edit-btn btn btn-success btn-sm" data-id="<%= post._id %>" data-content="<%= post.content %>">編集する</button>
+            <% } %>
+            <% if (currentUser && post.author.equals(currentUser._id)) { %>
+                <button type="submit" class="delete-btn btn btn-danger btn-sm delete-trigger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="<%= post._id %>">削除する</button>
+            <% } %>
+        </div>
     </div>
 <% }) %>
 

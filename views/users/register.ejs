@@ -14,6 +14,9 @@
                             <div class="form-floating mb-3">
                                 <input type="password" class="form-control" id="password" name="password" placeholder="パスワード">
                                 <label for="password">パスワード</label>
+                                <button type="button" class="btn btn-sm btn-outline-secondary position-absolute end-0 top-0 mt-3 me-2" id="togglePasswordRegister">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                             </div>
                             <div class="alert alert-info py-2 mb-3 small">
                                 <ul class="mb-0 ps-3">
@@ -28,6 +31,29 @@
 
                 </div>
             </div>
+            <!-- <div class="alert alert-info text-center mt-2" role="alert">
+                現在パスワード再設定の機能を実装していません
+                パスワードを忘れた場合には再登録が必要になります
+            </div> -->
+            <div class="alert alert-warning py-2 mb-3 mt-3 small">
+                <ul class="mb-0 ps-3">
+                    <li>現在パスワード再設定の機能を実装していません</li>
+                    <li>パスワードを忘れた場合は再登録が必要になります</li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    const togglePassword = document.getElementById('togglePasswordRegister');
+    const password = document.getElementById('password');
+
+    togglePassword.addEventListener('click', () => {
+        const type = password.type === 'password' ? 'text' : 'password';
+        password.type = type;
+        const icon = togglePassword.querySelector('i');
+        icon.classList.toggle('bi-eye');
+        icon.classList.toggle('bi-eye-slash');
+    })
+</script>

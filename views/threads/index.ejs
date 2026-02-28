@@ -64,7 +64,7 @@
                 <!-- 左側: ユーザー名と投稿時間 -->
                 <div class="d-flex align-items-center gap-2">
                     <h5 class="mb-0"><%= thread.author.username %></h5>
-                    <small class="text-muted"><%= thread.createdAt.toLocaleString() %></small>
+                    <small class="text-muted"><%= thread.createdAt.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) %></small>
                 </div>
                 <!-- 右側: ポスト数とタグ -->
                 <div class="d-flex align-items-center gap-2 ms-md-auto mt-1 mt-md-0">
@@ -80,17 +80,21 @@
         <div class="card-body">
             <h5 class="card-title"><%= thread.title %></h5>
             <p class="card-text"><%= thread.content %></p>
-            <a href="/threads/<%= thread._id %>" class="btn btn-primary">スレッドを見る</a>
 
-            <% if (currentUser && thread.author.equals(currentUser._id) && isWithinTime) { %>
-                <form action="/threads/<%= thread._id %>/edit" method="GET" class="d-inline">
-                    <button type="submit" class="delete-btn btn btn-success ms-3" data-id="<%= thread._id %>">編集する</button>
-                </form>
-            <% } %>
+            <div class="mt-2 d-flex gap-2">
+                <a href="/threads/<%= thread._id %>" class="btn btn-primary btn-sm">スレッドを見る</a>
 
-            <% if (currentUser && thread.author.equals(currentUser._id)) { %>
-                <button type="button" class="delete-btn btn btn-danger ms-3 delete-trigger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="<%= thread._id %>" data-type="thread">削除する</button>
-            <% } %>
+                <% if (currentUser && thread.author.equals(currentUser._id) && isWithinTime) { %>
+                    <form action="/threads/<%= thread._id %>/edit" method="GET" class="d-inline">
+                        <button type="submit" class="delete-btn btn btn-success btn-sm" data-id="<%= thread._id %>">編集する</button>
+                    </form>
+                <% } %>
+
+                <% if (currentUser && thread.author.equals(currentUser._id)) { %>
+                    <button type="button" class="delete-btn btn btn-danger btn-sm delete-trigger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="<%= thread._id %>" data-type="thread">削除する</button>
+                <% } %>
+            </div>
+            
         </div>
     </div>
 <% } %>

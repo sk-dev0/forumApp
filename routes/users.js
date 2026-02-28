@@ -6,6 +6,9 @@ const User = require('../models/user');
 const { validateUser } = require('../middleware');
 
 router.get('/register', (req, res) => {
+    if (req.user) {
+        return res.redirect('/threads');
+    }
     res.render('users/register');
 })
 
@@ -28,6 +31,9 @@ router.post('/register', validateUser, catchAsync(async (req, res, next) => {
 }));
 
 router.get('/login', (req, res) => {
+    if (req.user) {
+        return res.redirect('/threads');
+    }
     res.render('users/login');
 })
 
