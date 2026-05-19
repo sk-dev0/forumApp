@@ -54,10 +54,10 @@ npm install
 3. 環境変数を設定
 
 `.env` ファイルを作成し、以下の変数を設定してください。
-'''
+```
 MONGODB_URL=
 SESSION_SECRET=
-'''
+```
 4. 開発サーバーを起動
 ```bash
 node app.js
