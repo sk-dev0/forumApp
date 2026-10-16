@@ -26,7 +26,7 @@
         bgClass = 'bg-warning-subtle';
     }
 %>
-    <div class="mb-3 p-3 rounded-3 <%= bgClass %>">
+    <div class="mb-3 p-3 rounded-3 <%= bgClass %> post-item">
         <div class="d-flex align-items-center">
             <div class="d-flex align-items-center">
                 <p class="mb-0">[<%= index + 1 %>] <%= post.author.username %></p>
@@ -55,17 +55,20 @@
     <form id="postForm" action="/threads/<%= thread._id %>/posts" method="POST" class="needs-validation" novalidate>
         <div class="mb-3">
             <label for="replyInput" class="form-label">返信を入力</label>
-            <textarea name="content" class="form-control" id="replyInput" rows="3" placeholder="返信を入力..." required></textarea>
+            <textarea name="content" class="form-control" id="replyInput" maxlength="500" rows="3" placeholder="返信を入力..." required></textarea>
             <div class="valid-feedback">
                 OK!
             </div>
             <div class="invalid-feedback">
                 内容を入力してください
             </div>
+            <div class="text-danger small mt-1 d-none" id="replyMaxlength">
+                返信は500文字までです
+            </div>
         </div>
 
         <div class="d-flex justify-content-between mt-3">
-            <a href="/threads" class="btn btn-danger">
+            <a href="/threads" class="btn btn-danger" id="backToList">
                 スレッド一覧に戻る
             </a>
             <button id="submitBtn" class="btn btn-primary px-4">
@@ -81,11 +84,40 @@
 
 <%- include('../partials/deleteModal') %>
 
+<% if (currentUser) { %>
 <script>
+    try {
+        const lastListUrl = sessionStorage.getItem('lastThreadListUrl');
+        if (lastListUrl && lastListUrl.startsWith('/threads')) {
+            document.getElementById('backToList').href = lastListUrl;
+        }
+    } catch (e) {
+        // 記録できない環境（ブラウザの設定など）では何もしない
+    }
+
+    function checkMaxlength(input, message) {
+        if (input.value.length >= input.maxLength) {
+            message.classList.remove('d-none');
+        } else {
+            message.classList.add('d-none');
+        }
+    }
+
+    function setMaxlengthWarning(inputId, messageId) {
+        const input = document.getElementById(inputId);
+        const message = document.getElementById(messageId);
+
+        input.addEventListener('input', () => {
+            checkMaxlength(input, message);
+        })
+    }
+    setMaxlengthWarning('replyInput', 'replyMaxlength')
+
     const editButtons = document.querySelectorAll('.edit-btn');
     const textarea = document.getElementById('replyInput');
+    const replyMaxlength = document.getElementById('replyMaxlength');
     const form = document.getElementById('postForm');
-    
+
     const submitBtn = document.getElementById('submitBtn');
     const editNotice = document.getElementById('editNotice');
     const cancelEdit = document.getElementById('cancelEdit');
@@ -99,6 +131,7 @@
             const content = button.dataset.content;
 
             textarea.value = content;
+            checkMaxlength(textarea, replyMaxlength); 
             
             form.action = `/posts/${postId}?_method=PUT`;
             form.classList.add("border", "border-warning", "bg-warning-subtle");
@@ -109,7 +142,7 @@
             if (editingPostElement) {
                 editingPostElement.classList.remove("border", "border-danger");
             }
-            editingPostElement = button.closest('.bg-body-tertiary');
+            editingPostElement = button.closest('.post-item');
             editingPostElement.classList.add("border", "border-danger");
 
             textarea.scrollIntoView({ behavior: 'smooth' });
@@ -117,6 +150,7 @@
 
         cancelEdit.addEventListener('click', () => {
             textarea.value = "";
+            checkMaxlength(textarea, replyMaxlength); 
             
             form.action = originalAction;
 
@@ -145,5 +179,6 @@
         });
     });
 </script>
+<% } %>
 
 

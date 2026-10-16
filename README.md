@@ -14,7 +14,7 @@
 - **セッション:** express-session + connect-mongo
 - **バリデーション:** Joi
 - **スタイリング:** Bootstrap
-- **セキュリティ:** Helmet / express-mongo-sanitize / sanitize-html
+- **セキュリティ:** Helmet / sanitize-html
 - **デプロイ:** Vercel
 
 ## 主な機能

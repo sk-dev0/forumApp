@@ -4,22 +4,28 @@
 <form action="/threads" method="POST" class="needs-validation" novalidate>
     <div class="mb-3">
         <label for="threadTitle" class="form-label">スレッドのタイトル</label>
-        <input type="text" class="form-control" id="threadTitle" name="title" placeholder="スレッドのタイトルを入力" required>
+        <input type="text" class="form-control" id="threadTitle" name="title" maxlength="100" placeholder="スレッドのタイトルを入力" required>
         <div class="valid-feedback">
             OK!
         </div>
         <div class="invalid-feedback">
             タイトルを入力してください
         </div>
+        <div class="text-danger small mt-1 d-none" id="titleMaxlength">
+            タイトルは100文字までです
+        </div>
     </div>
     <div class="mb-3">
         <label for="threadContent" class="form-label">スレッドの内容</label>
-        <textarea class="form-control" id="threadContent" name="content" rows="3" required></textarea>
+        <textarea class="form-control" id="threadContent" name="content" maxlength="500" rows="3" required></textarea>
         <div class="valid-feedback">
             OK!
         </div>
         <div class="invalid-feedback">
             内容を入力してください
+        </div>
+        <div class="text-danger small mt-1 d-none" id="contentMaxlength">
+            本文は500文字までです
         </div>
     </div>
     
@@ -74,6 +80,22 @@
 </form>
 
 <script>
+    function setMaxlengthWarning(inputId, messageId) {
+        const input = document.getElementById(inputId);
+        const message = document.getElementById(messageId);
+
+        input.addEventListener('input', () => {
+            if (input.value.length >= input.maxLength) {
+                message.classList.remove('d-none');
+            } else {
+                message.classList.add('d-none');
+            }
+        })
+    }
+
+    setMaxlengthWarning('threadTitle', 'titleMaxlength');
+    setMaxlengthWarning('threadContent', 'contentMaxlength');
+
     const categoryBtns = document.querySelectorAll('.category-btn');
     const tagCheckboxes = document.getElementById('tagCheckboxes');
 
@@ -116,4 +138,13 @@
             tagError.style.display = 'none';
         }
     });
+
+    document.querySelectorAll('input[name="tags"]').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const checkedTags = document.querySelectorAll('input[name="tags"]:checked');
+            if (checkedTags.length > 0) {
+                document.getElementById('tagError').style.display = 'none';
+            }
+        }) 
+    })
 </script>

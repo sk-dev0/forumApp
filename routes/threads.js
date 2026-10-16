@@ -3,7 +3,7 @@ const router = express.Router();
 const catchAsync = require('../utils/catchAsync');
 const Thread = require('../models/thread');
 const Post = require('../models/post');
-const { isLoggedIn, isThreadAuthor, isThreadExist, validateThread, normalizeTags } = require('../middleware');
+const { isLoggedIn, isThreadAuthor, isThreadExist, validateThread, normalizeTags, validatePost } = require('../middleware');
 
 const tagCategories = {
     '情報・知識': ['ニュース・時事', '政治・社会', '科学・技術', '歴史・文化'],
@@ -22,11 +22,24 @@ router.get('/', catchAsync(async (req, res) => {
         filter.tags = req.query.tag;
     }
 
-    if (req.query.keyword) {
-        filter.title = { $regex: req.query.keyword, $options: 'i' };
+    if (typeof req.query.keyword === 'string' && req.query.keyword) {
+        const specialChars = ['.', '*', '+', '?', '^', '$', '{', '}', '(', ')', '|', '[', ']', '\\'];
+
+        const keyword = [];
+        for (const char of req.query.keyword) {
+            if (specialChars.includes(char)) {
+                keyword.push('\\')
+            }
+            keyword.push(char);
+        }
+        
+        filter.title = { $regex: keyword.join(''), $options: 'i' };
     }
 
-    const page = parseInt(req.query.page) || 1;
+    let page = parseInt(req.query.page) || 1;
+    if (page < 0) {
+        page = 1;
+    }
     const limit = 20;
     const skip = (page - 1) * limit;
 
@@ -62,11 +75,9 @@ router.post('/', isLoggedIn, normalizeTags, validateThread, catchAsync(async (re
     res.redirect('/threads');
 }));
 
-router.get('/:id', catchAsync(async (req, res) => {
-    const threadId = req.params.id;
-    const thread = await Thread.findById(req.params.id);
-    const posts = await Post.find({ thread: threadId }).populate('author').sort({ createdAt: 1 });
-    res.render('threads/show', { thread, posts });
+router.get('/:id', isThreadExist, catchAsync(async (req, res) => {
+    const posts = await Post.find({ thread: req.thread._id }).populate('author').sort({ createdAt: 1 });
+    res.render('threads/show', { thread: req.thread, posts });
 }));
 
 router.delete('/:id', isLoggedIn, isThreadExist, isThreadAuthor, catchAsync(async (req, res) => {
@@ -100,13 +111,14 @@ router.put('/:id', isLoggedIn, isThreadExist, isThreadAuthor, normalizeTags, val
 
     req.thread.title = req.body.title;
     req.thread.content = req.body.content;
+    req.thread.tags = req.body.tags;
     await req.thread.save();
 
     req.flash('success', 'スレッドを更新しました');
     res.redirect('/threads');
 }));
 
-router.post('/:id/posts', isLoggedIn, catchAsync(async (req, res) => {
+router.post('/:id/posts', isLoggedIn, isThreadExist, validatePost, catchAsync(async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
 

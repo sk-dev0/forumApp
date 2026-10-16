@@ -100,20 +100,25 @@
 <% } %>
 
 <% if (totalPages > 1) { %>
+    <%
+        const query = 
+            (currentTag ? '&tag=' + encodeURIComponent(currentTag) : '') + 
+            (currentKeyword ? '&keyword=' + encodeURIComponent(currentKeyword) : '');
+    %>
     <nav class="mt-4">
         <ul class="pagination justify-content-center">
             <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                <a class="page-link" href="/threads?page=<%= currentPage - 1 %><%= currentTag ? '&tag=' + currentTag : '' %><%= currentKeyword ? '&keyword=' + currentKeyword : '' %>">前へ</a>
+                <a class="page-link" href="/threads?page=<%= currentPage - 1 %><%= query %>">前へ</a>
             </li>
 
             <% for (let i = 1; i <= totalPages; i++) { %>
                 <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                    <a class="page-link" href="/threads?page=<%= i %><%= currentTag ? '&tag=' + currentTag : '' %><%= currentKeyword ? '&keyword=' + currentKeyword : '' %>"><%= i %></a>
+                    <a class="page-link" href="/threads?page=<%= i %><%= query %>"><%= i %></a>
                 </li>
             <% } %>
 
             <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                <a class="page-link" href="/threads?page=<%= currentPage + 1 %><%= currentTag ? '&tag=' + currentTag : '' %><%= currentKeyword ? '&keyword=' + currentKeyword : '' %>">次へ</a>
+                <a class="page-link" href="/threads?page=<%= currentPage + 1 %><%= query %>">次へ</a>
             </li>
         </ul>
     </nav>
@@ -122,6 +127,12 @@
 <%- include('../partials/deleteModal') %>
 
 <script>
+    try {
+        sessionStorage.setItem('lastThreadListUrl', location.pathname + location.search) 
+    } catch(e) {
+        // 記録できない環境（ブラウザの設定など）では何もしない
+    }
+
     const deleteButtons = document.querySelectorAll('.delete-trigger');
     const deleteForm = document.getElementById('deleteForm');
 
