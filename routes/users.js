@@ -26,6 +26,11 @@ router.post('/register', validateUser, catchAsync(async (req, res, next) => {
             res.redirect('/threads');
         });
     } catch (e) {
+        if (e.name === 'UserExistsError') {
+            req.flash('error', e.message);
+        } else {
+            req.flash('error', '登録に失敗しました')
+        }
         res.redirect('/register');
     }
 }));

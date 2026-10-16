@@ -5,7 +5,7 @@ const extension = (joi) => ({
     type: 'string',
     base: joi.string(),
     messages: {
-        'string.escapeHTML': '{{#label}} must not include HTML!'
+        'string.escapeHTML': 'HTMLタグは使用できません'
     },
     rules: {
         escapeHTML: {
@@ -24,15 +24,17 @@ const extension = (joi) => ({
 const Joi = BaseJoi.extend(extension);
 
 module.exports.threadSchema = Joi.object({
-    title: Joi.string().required().escapeHTML().messages({
+    title: Joi.string().required().max(100).escapeHTML().messages({
         'string.empty': 'タイトルは必須です',
         'any.required': 'タイトルは必須です',
-        'string.max': 'タイトルは100文字以内にしてください'
+        'string.max': 'タイトルは100文字以内にしてください',
+        'string.escapeHTML': 'タイトルにHTMLタグは使用できません'
     }),
-    content: Joi.string().required().escapeHTML().messages({
+    content: Joi.string().required().max(500).escapeHTML().messages({
         'string.empty': '本文は必須です',
         'any.required': '本文は必須です',
-        'string.max': '本文は500文字以内にしてください'
+        'string.max': '本文は500文字以内にしてください',
+        'string.escapeHTML': '本文にHTMLタグは使用できません'
     }),
     tags: Joi.array().items(Joi.string()).min(1).required().messages({
         'array.min': 'タグを1つ以上選択してください',
@@ -41,10 +43,11 @@ module.exports.threadSchema = Joi.object({
 });
 
 module.exports.postSchema = Joi.object({
-    content: Joi.string().required().escapeHTML().messages({
+    content: Joi.string().required().max(500).escapeHTML().messages({
         'string.empty': '投稿内容は必須です',
         'any.required': '投稿内容は必須です',
-        'string.max': '投稿内容は500文字以内にしてください'
+        'string.max': '投稿内容は500文字以内にしてください',
+        'string.escapeHTML': '投稿内容にHTMLタグは使用できません'
     })
 });
 

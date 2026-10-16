@@ -108,6 +108,12 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) =>{
     const { statusCode = 500 } = err;
+
+    if (!(err instanceof ExpressError)) {
+        console.log(err);
+        err.message = '問題が起きました';
+    }
+
     if (!err.message) {
         err.message = '問題が起きました'
     }

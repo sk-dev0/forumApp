@@ -2,6 +2,7 @@ const ExpressError = require('./utils/ExpressError');
 const { threadSchema, postSchema, userSchema } = require('./schemas');
 const Thread = require('./models/thread');
 const Post = require('./models/post');
+const mongoose = require('mongoose');
 
 module.exports.isLoggedIn = (req, res, next) => {
     if (!req.isAuthenticated()){
@@ -23,6 +24,10 @@ module.exports.validateThread = (req, res, next) => {
 
 module.exports.isThreadExist = async (req, res,next) => {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+        req.flash('error', 'スレッドが見つかりません');
+        return res.redirect('/threads');
+    }
     const thread = await Thread.findById(id);
     if (!thread) {
         req.flash('error', 'スレッドが見つかりません');
@@ -52,10 +57,14 @@ module.exports.validatePost = (req, res, next) => {
 
 module.exports.isPostExist = async(req, res, next) =>{
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+        req.flash('error', '投稿が見つかりません');
+        return res.redirect('/threads');
+    }
     const post = await Post.findById(id);
     if (!post) {
         req.flash('error', '投稿が見つかりません');
-        return res.redirect(`/threads/${post.thread}`);
+        return res.redirect(`/threads`);
     }
     req.post = post;
     next();
